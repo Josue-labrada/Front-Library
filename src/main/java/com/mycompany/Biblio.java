@@ -1,17 +1,21 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 
 /**
  *
  * @author josuedominguezlabrada
  */
-//import javax.swing.*;
-//import java.awt.event.ActionEvent;
-//import java.awt.event.ActionListener;
-//import java.util.ArrayList;
-//import java.util.List;
+
+package com.mycompany;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Biblio extends javax.swing.JFrame {
     
@@ -146,11 +150,122 @@ public class Biblio extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
+    
+    //botones
     private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
-        // TODO add your handling code here:
+        String titulo = txtlibro.getText();
+        String autor = txtAutor.getText();
+        agregarLibro(titulo, autor);
     }//GEN-LAST:event_btnAgregarActionPerformed
+    
+    private void btnBuscarActionPerformed(ActionEvent evt) {
+        String titulo = txtlibro.getText();
+        buscarLibro(titulo);
+    }
+    
+    private void btnEliminarActionPerformed(ActionEvent evt) {
+        String titulo = txtlibro.getText();
+        eliminarLibro(titulo);
+    }
+    
+    private void btnInventarioActionPerformed(ActionEvent evt) {
+        getInventario();
+    }
+    
+    private void agregarLibro(String titulo, String autor) {
+        try {
+            URL url = new URL("http://localhost:8080/books");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
 
+            String input = String.format("{\"title\":\"%s\",\"author\":\"%s\"}", titulo, autor);
+            OutputStream os = conn.getOutputStream();
+            os.write(input.getBytes());
+            os.flush();
+
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
+                txtArea.setText("Libro agregado exitosamente.");
+            } else {
+                txtArea.setText("Error al agregar el libro.");
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+            txtArea.setText("Error al conectar con el servidor.");
+        }
+    }
+    
+    private void buscarLibro(String titulo) {
+        try {
+            URL url = new URL("http://localhost:8080/books/" + titulo);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/json");
+
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+                String output;
+                StringBuilder response = new StringBuilder();
+                while ((output = br.readLine()) != null) {
+                    response.append(output);
+                }
+                txtArea.setText(response.toString());
+            } else {
+                txtArea.setText("Libro no encontrado.");
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+            txtArea.setText("Error al conectar con el servidor.");
+        }
+    }
+    
+    private void eliminarLibro(String titulo) {
+        try {
+            URL url = new URL("http://localhost:8080/books/" + titulo);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("DELETE");
+
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_NO_CONTENT) {
+                txtArea.setText("Libro eliminado exitosamente.");
+            } else {
+                txtArea.setText("Error al eliminar el libro.");
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+            txtArea.setText("Error al conectar con el servidor.");
+        }
+    }
+    
+    private void getInventario() {
+        try {
+            URL url = new URL("http://localhost:8080/books");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/json");
+
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+                String output;
+                StringBuilder response = new StringBuilder();
+                while ((output = br.readLine()) != null) {
+                    response.append(output);
+                }
+                txtArea.setText(response.toString());
+            } else {
+                txtArea.setText("Error al obtener el inventario.");
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+            txtArea.setText("Error al conectar con el servidor.");
+        }
+    }
+    
+    
     /**
      * @param args the command line arguments
      */
@@ -160,7 +275,12 @@ public class Biblio extends javax.swing.JFrame {
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
-        try {
+        
+        java.awt.EventQueue.invokeLater(() -> new Biblio().setVisible(true));
+        
+        
+        
+        /*try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
@@ -178,12 +298,13 @@ public class Biblio extends javax.swing.JFrame {
         }
         //</editor-fold>
 
-        /* Create and display the form */
+        
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new Biblio().setVisible(true);
             }
         });
+        */
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

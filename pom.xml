@@ -7,7 +7,19 @@
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>22</maven.compiler.release>
-        <exec.mainClass>com.mycompany.app.App</exec.mainClass>
+        <maven.compiler.release>17</maven.compiler.release>
     </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.mycompany.Biblio</mainClass> <!-- Cambia esta línea a la ruta completa de tu clase Biblio -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
