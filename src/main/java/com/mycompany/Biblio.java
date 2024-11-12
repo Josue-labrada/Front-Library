@@ -73,14 +73,30 @@ public class Biblio extends javax.swing.JFrame {
         btnInventario.setBackground(new java.awt.Color(221, 230, 32));
         btnInventario.setForeground(new java.awt.Color(255, 255, 255));
         btnInventario.setText("Inventario");
+        btnInventario.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                getInventario();
+            }
+        });
 
         btnEliminar.setBackground(new java.awt.Color(216, 70, 15));
         btnEliminar.setForeground(new java.awt.Color(255, 255, 255));
         btnEliminar.setText("Eliminar");
+        btnEliminar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                String titulo = txtlibro.getText();
+                eliminarLibro(titulo);
+            }
+        });
 
         btnBuscar.setBackground(new java.awt.Color(15, 186, 216));
         btnBuscar.setForeground(new java.awt.Color(255, 255, 255));
         btnBuscar.setText("Buscar");
+        btnBuscar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBuscarActionPerformed(evt); // Vincula el botón "Buscar" a su acción
+            }
+        });
 
         txtArea.setColumns(20);
         txtArea.setRows(5);
@@ -152,86 +168,92 @@ public class Biblio extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
     
     //botones
-    private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
+    private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {
         String titulo = txtlibro.getText();
         String autor = txtAutor.getText();
         agregarLibro(titulo, autor);
-    }//GEN-LAST:event_btnAgregarActionPerformed
-    
-    private void btnBuscarActionPerformed(ActionEvent evt) {
-        String titulo = txtlibro.getText();
-        buscarLibro(titulo);
     }
-    
-    private void btnEliminarActionPerformed(ActionEvent evt) {
-        String titulo = txtlibro.getText();
-        eliminarLibro(titulo);
+    private void btnBuscarActionPerformed(ActionEvent evt) {
+    String titulo = txtlibro.getText();
+    buscarLibro(titulo);
+    }
+
+    private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {
+        String id = txtlibro.getText(); // ID
+        eliminarLibro(id);
     }
     
     private void btnInventarioActionPerformed(ActionEvent evt) {
+
         getInventario();
     }
     
     private void agregarLibro(String titulo, String autor) {
-        try {
-            URL url = new URL("http://localhost:8080/books");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
+    try {
+        URL url = new URL("http://localhost:8080/books");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
 
-            String input = String.format("{\"title\":\"%s\",\"author\":\"%s\"}", titulo, autor);
-            OutputStream os = conn.getOutputStream();
-            os.write(input.getBytes());
-            os.flush();
+        String input = String.format("{\"title\":\"%s\",\"author\":\"%s\"}", titulo, autor);
+        OutputStream os = conn.getOutputStream();
+        os.write(input.getBytes());
+        os.flush();
 
-            if (conn.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
-                txtArea.setText("Libro agregado exitosamente.");
-            } else {
-                txtArea.setText("Error al agregar el libro.");
-            }
-            conn.disconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
-            txtArea.setText("Error al conectar con el servidor.");
+        if (conn.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
+            txtArea.setText("Libro agregado exitosamente.");
+        } else {
+            txtArea.setText("Error al agregar el libro. Código de respuesta: " + conn.getResponseCode());
         }
+        conn.disconnect();
+    } catch (Exception e) {
+        e.printStackTrace();
+        txtArea.setText("Error al conectar con el servidor.");
     }
+}
     
     private void buscarLibro(String titulo) {
-        try {
-            URL url = new URL("http://localhost:8080/books/" + titulo);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
+    try {
+        // Codifica el título para manejar espacios y caracteres especiales en la URL
+        String encodedTitulo = java.net.URLEncoder.encode(titulo, "UTF-8");
+        URL url = new URL("http://localhost:8080/books/" + encodedTitulo);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Accept", "application/json");
 
-            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-                String output;
-                StringBuilder response = new StringBuilder();
-                while ((output = br.readLine()) != null) {
-                    response.append(output);
-                }
-                txtArea.setText(response.toString());
-            } else {
-                txtArea.setText("Libro no encontrado.");
+        if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            // Leer la respuesta JSON
+            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+            StringBuilder response = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                response.append(output);
             }
-            conn.disconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
-            txtArea.setText("Error al conectar con el servidor.");
+            // Mostrar el contenido JSON en el área de texto
+            txtArea.setText("Resultado de búsqueda:\n" + response.toString());
+        } else {
+            txtArea.setText("Libro no encontrado.");
         }
+        conn.disconnect();
+    } catch (Exception e) {
+        e.printStackTrace();
+        txtArea.setText("Error al conectar con el servidor.");
     }
-    
-    private void eliminarLibro(String titulo) {
+}
+
+    private void eliminarLibro(String id) {
         try {
-            URL url = new URL("http://localhost:8080/books/" + titulo);
+            URL url = new URL("http://localhost:8080/books/" + id); // Asegúrate de usar el ID aquí
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("DELETE");
 
             if (conn.getResponseCode() == HttpURLConnection.HTTP_NO_CONTENT) {
                 txtArea.setText("Libro eliminado exitosamente.");
+            } else if (conn.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
+                txtArea.setText("Libro no encontrado.");
             } else {
-                txtArea.setText("Error al eliminar el libro.");
+                txtArea.setText("Error al eliminar el libro. Código de respuesta: " + conn.getResponseCode());
             }
             conn.disconnect();
         } catch (Exception e) {
@@ -275,36 +297,19 @@ public class Biblio extends javax.swing.JFrame {
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
-        
-        java.awt.EventQueue.invokeLater(() -> new Biblio().setVisible(true));
-        
-        
-        
-        /*try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Biblio.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Biblio.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Biblio.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Biblio.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
+        //Funciona para poner color en mac
+        try {
+        javax.swing.UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
 
-        
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Biblio().setVisible(true);
-            }
-        });
-        */
+    java.awt.EventQueue.invokeLater(new Runnable() {
+        public void run() {
+            new Biblio().setVisible(true);
+        }
+    });
+   
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
