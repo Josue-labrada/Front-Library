@@ -16,6 +16,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Biblio extends javax.swing.JFrame {
     
@@ -100,6 +102,7 @@ public class Biblio extends javax.swing.JFrame {
 
         txtArea.setColumns(20);
         txtArea.setRows(5);
+        txtArea.setEditable(false);
         jScrollPane1.setViewportView(txtArea);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -172,20 +175,27 @@ public class Biblio extends javax.swing.JFrame {
         String titulo = txtlibro.getText();
         String autor = txtAutor.getText();
         agregarLibro(titulo, autor);
+        txtlibro.setText("");
+        txtAutor.setText("");
     }
     private void btnBuscarActionPerformed(ActionEvent evt) {
-    String titulo = txtlibro.getText();
-    buscarLibro(titulo);
+        String titulo = txtlibro.getText();
+        buscarLibro(titulo);
+        txtlibro.setText("");
+        txtAutor.setText("");
     }
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {
         String id = txtlibro.getText(); // ID
         eliminarLibro(id);
+        txtlibro.setText("");
+        txtAutor.setText("");
     }
     
     private void btnInventarioActionPerformed(ActionEvent evt) {
-
         getInventario();
+        txtlibro.setText("");
+        txtAutor.setText("");
     }
     
     private void agregarLibro(String titulo, String autor) {
@@ -212,35 +222,36 @@ public class Biblio extends javax.swing.JFrame {
         txtArea.setText("Error al conectar con el servidor.");
     }
 }
-    
-    private void buscarLibro(String titulo) {
-    try {
-        // Codifica el título para manejar espacios y caracteres especiales en la URL
-        String encodedTitulo = java.net.URLEncoder.encode(titulo, "UTF-8");
-        URL url = new URL("http://localhost:8080/books/" + encodedTitulo);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Accept", "application/json");
 
-        if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            // Leer la respuesta JSON
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-            StringBuilder response = new StringBuilder();
-            String output;
-            while ((output = br.readLine()) != null) {
-                response.append(output);
+    private void buscarLibro(String titulo) {
+        try {
+            URL url = new URL("http://localhost:8080/books/" + titulo);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/json");
+
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String output;
+                while ((output = br.readLine()) != null) {
+                    response.append(output);
+                }
+
+                // Formatear el JSON con Gson
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                String formattedJson = gson.toJson(gson.fromJson(response.toString(), Object.class));
+
+                txtArea.setText("Resultado de búsqueda:\n" + formattedJson);
+            } else {
+                txtArea.setText("Libro no encontrado.");
             }
-            // Mostrar el contenido JSON en el área de texto
-            txtArea.setText("Resultado de búsqueda:\n" + response.toString());
-        } else {
-            txtArea.setText("Libro no encontrado.");
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+            txtArea.setText("Error al conectar con el servidor.");
         }
-        conn.disconnect();
-    } catch (Exception e) {
-        e.printStackTrace();
-        txtArea.setText("Error al conectar con el servidor.");
     }
-}
 
     private void eliminarLibro(String id) {
         try {
@@ -261,7 +272,7 @@ public class Biblio extends javax.swing.JFrame {
             txtArea.setText("Error al conectar con el servidor.");
         }
     }
-    
+
     private void getInventario() {
         try {
             URL url = new URL("http://localhost:8080/books");
@@ -270,13 +281,18 @@ public class Biblio extends javax.swing.JFrame {
             conn.setRequestProperty("Accept", "application/json");
 
             if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 String output;
                 StringBuilder response = new StringBuilder();
                 while ((output = br.readLine()) != null) {
                     response.append(output);
                 }
-                txtArea.setText(response.toString());
+
+                // Usa Gson para formatear el JSON
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                String formattedJson = gson.toJson(gson.fromJson(response.toString(), Object.class));
+
+                txtArea.setText("Inventario:\n" + formattedJson);
             } else {
                 txtArea.setText("Error al obtener el inventario.");
             }
@@ -287,16 +303,10 @@ public class Biblio extends javax.swing.JFrame {
         }
     }
     
-    
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         //Funciona para poner color en mac
         try {
         javax.swing.UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
@@ -304,9 +314,9 @@ public class Biblio extends javax.swing.JFrame {
         e.printStackTrace();
     }
 
-    java.awt.EventQueue.invokeLater(new Runnable() {
+        java.awt.EventQueue.invokeLater(new Runnable(){
         public void run() {
-            new Biblio().setVisible(true);
+        new Biblio().setVisible(true);
         }
     });
    
