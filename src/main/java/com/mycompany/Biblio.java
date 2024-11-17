@@ -238,13 +238,31 @@ public class Biblio extends javax.swing.JFrame {
                     response.append(output);
                 }
 
-                // Formatear el JSON con Gson
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                String formattedJson = gson.toJson(gson.fromJson(response.toString(), Object.class));
+                // Parse JSON using Gson
+                Gson gson = new Gson();
+                Book[] books = gson.fromJson(response.toString(), Book[].class);
 
-                txtArea.setText("Resultado de búsqueda:\n" + formattedJson);
+                // Format the output in a readable way
+                StringBuilder formattedOutput = new StringBuilder();
+                formattedOutput.append("=== Resultados de la Búsqueda ===\n");
+                formattedOutput.append("Libros encontrados: ").append(books.length).append("\n\n");
+
+                for (Book book : books) {
+                    formattedOutput.append("-------------------------\n");
+                    formattedOutput.append("Título: ").append(book.getTitle()).append("\n");
+                    formattedOutput.append("Autor: ").append(String.join(", ", book.getAuthors())).append("\n");
+                    formattedOutput.append("ISBN: ").append(book.getIsbn()).append("\n");
+                    formattedOutput.append("ISBN-13: ").append(book.getIsbn13()).append("\n");
+                    formattedOutput.append("Idioma: ").append(book.getLanguageCode()).append("\n");
+                    formattedOutput.append("Páginas: ").append(book.getNumPages()).append("\n");
+                    formattedOutput.append("Calificación promedio: ").append(book.getAverageRating()).append("/5.0\n");
+                    formattedOutput.append("Número de calificaciones: ").append(book.getRatingsCount()).append("\n");
+                    formattedOutput.append("-------------------------\n");
+                }
+
+                txtArea.setText(formattedOutput.toString());
             } else {
-                txtArea.setText("Libro no encontrado.");
+                txtArea.setText("Error al obtener el inventario.");
             }
             conn.disconnect();
         } catch (Exception e) {
@@ -282,24 +300,50 @@ public class Biblio extends javax.swing.JFrame {
 
             if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                String output;
                 StringBuilder response = new StringBuilder();
+                String output;
                 while ((output = br.readLine()) != null) {
                     response.append(output);
                 }
 
-                // Usa Gson para formatear el JSON
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                String formattedJson = gson.toJson(gson.fromJson(response.toString(), Object.class));
+                // Parse JSON using Gson
+                Gson gson = new Gson();
+                Book[] books = gson.fromJson(response.toString(), Book[].class);
 
-                txtArea.setText("Inventario:\n" + formattedJson);
+                // Format the output in a readable way
+                StringBuilder formattedOutput = new StringBuilder();
+                formattedOutput.append("=== Inventario de Libros ===\n");
+                formattedOutput.append("Total de libros: ").append(books.length).append("\n\n");
+
+                for (Book book : books) {
+                    formattedOutput.append("-------------------------\n");
+                    formattedOutput.append("Título: ").append(book.getTitle() != null ? book.getTitle() : "N/A").append("\n");
+
+                    // Handle authors array safely
+                    String authorStr = "N/A";
+                    if (book.getAuthors() != null && book.getAuthors().length > 0) {
+                        authorStr = String.join(", ", book.getAuthors());
+                    }
+                    formattedOutput.append("Autor: ").append(authorStr).append("\n");
+
+                    // Handle other fields safely
+                    formattedOutput.append("ISBN: ").append(book.getIsbn() != null ? book.getIsbn() : "N/A").append("\n");
+                    formattedOutput.append("ISBN-13: ").append(book.getIsbn13() != null ? book.getIsbn13() : "N/A").append("\n");
+                    formattedOutput.append("Idioma: ").append(book.getLanguageCode() != null ? book.getLanguageCode() : "N/A").append("\n");
+                    formattedOutput.append("Páginas: ").append(book.getNumPages()).append("\n");
+                    formattedOutput.append("Calificación promedio: ").append(book.getAverageRating()).append("/5.0\n");
+                    formattedOutput.append("Número de calificaciones: ").append(book.getRatingsCount()).append("\n");
+                    formattedOutput.append("-------------------------\n");
+                }
+
+                txtArea.setText(formattedOutput.toString());
             } else {
                 txtArea.setText("Error al obtener el inventario.");
             }
             conn.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
-            txtArea.setText("Error al conectar con el servidor.");
+            txtArea.setText("Error al conectar con el servidor: " + e.getMessage());
         }
     }
     
@@ -337,4 +381,26 @@ public class Biblio extends javax.swing.JFrame {
     private javax.swing.JLabel txtTitulo;
     private javax.swing.JTextField txtlibro;
     // End of variables declaration//GEN-END:variables
+
+    private static class Book {
+        private String title;
+        private String[] authors;
+        private String isbn;
+        private String isbn13;
+        private String language_code;
+        private double num_pages;
+        private double average_rating;
+        private int ratings_count;
+
+        // Null-safe getters
+        public String getTitle() { return title != null ? title : ""; }
+        public String[] getAuthors() { return authors; }
+        public String getIsbn() { return isbn != null ? isbn : ""; }
+        public String getIsbn13() { return isbn13 != null ? isbn13 : ""; }
+        public String getLanguageCode() { return language_code != null ? language_code : ""; }
+        public double getNumPages() { return num_pages; }
+        public double getAverageRating() { return average_rating; }
+        public int getRatingsCount() { return ratings_count; }
+    }
+
 }
